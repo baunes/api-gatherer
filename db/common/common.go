@@ -52,13 +52,24 @@ type mongoSession struct {
 
 // NewClient creates a new ClientHelper
 func NewClient(cnf *Config) (ClientHelper, error) {
-	uri := fmt.Sprintf(`mongodb://%s:%s@%s:%s`,
-		cnf.Username,
-		cnf.Password,
-		cnf.Host,
-		cnf.Port,
-	)
+	var uri string
+	if len(cnf.Username) > 0 || len(cnf.Password) > 0 {
+		uri = fmt.Sprintf(`mongodb://%s:%s@%s:%s`,
+			cnf.Username,
+			cnf.Password,
+			cnf.Host,
+			cnf.Port,
+		)
+	} else {
+		uri = fmt.Sprintf(`mongodb://%s:%s`,
+			cnf.Host,
+			cnf.Port,
+		)
+	}
 	c, err := mongo.NewClient(options.Client().ApplyURI(uri))
+	if err != nil {
+		return nil, err
+	}
 
 	return &mongoClient{cl: c}, err
 
