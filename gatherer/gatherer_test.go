@@ -1,4 +1,4 @@
-package gatherer
+package gatherer_test
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/baunes/api-gatherer/gatherer"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ var (
 	mux *http.ServeMux
 
 	// client is the CircleCI client being tested.
-	client *Client
+	client gatherer.Client
 
 	// server is a test HTTP server used to provide mock API responses.
 	server *httptest.Server
@@ -31,7 +32,7 @@ func setup() *url.URL {
 		panic(fmt.Sprintf("couldn't parse test server URL: %s", server.URL))
 	}
 
-	client = &Client{}
+	client = gatherer.NewClient()
 	return url
 }
 
@@ -40,6 +41,7 @@ func teardown() {
 }
 
 func TestQueryWithInvalidUrl(t *testing.T) {
+	setup()
 	_, err := client.Query("", "69699ññ3ñ2ñ1ñ3ñdsqñdññ·$%&/()")
 	if err == nil || !strings.Contains(err.Error(), "invalid URL") {
 		t.Errorf(`Client.Query(...) must fail: %s`, err)
@@ -47,6 +49,7 @@ func TestQueryWithInvalidUrl(t *testing.T) {
 }
 
 func TestQueryWithEmptyUrl(t *testing.T) {
+	setup()
 	_, err := client.Query("", "")
 	if err == nil || !strings.Contains(err.Error(), "unsupported protocol scheme") {
 		t.Errorf(`Client.Query(...) must fail: %s`, err)

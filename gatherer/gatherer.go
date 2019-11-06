@@ -14,7 +14,12 @@ const (
 )
 
 // Client allows make HTTP Calls
-type Client struct {
+type Client interface {
+	Get(string) (*Response, error)
+	Query(string, string) (*Response, error)
+}
+
+type client struct {
 }
 
 // Response holds the response from the server
@@ -24,22 +29,27 @@ type Response struct {
 	Headers    map[string][]string     // HTTP Headers from the server
 }
 
-func (client *Client) client() *http.Client {
+// NewClient creates a new client
+func NewClient() Client {
+	return &client{}
+}
+
+func (client *client) client() *http.Client {
 	return http.DefaultClient
 }
 
 // Get makes an HTTP GET call an return de response (Body)
-func (client *Client) Get(urlToQuery string) (*Response, error) {
+func (client *client) Get(urlToQuery string) (*Response, error) {
 	return client.Query("GET", urlToQuery)
 }
 
 // Query makes an HTTP call an return de response (Body)
-func (client *Client) Query(method string, urlToQuery string) (*Response, error) {
+func (client *client) Query(method string, urlToQuery string) (*Response, error) {
 	return client.doRequest(method, urlToQuery, nil)
 }
 
 // doRequest executes a HTTP Request to the Kraken API and returns the result
-func (client *Client) doRequest(method string, reqURL string, headers map[string]string) (*Response, error) {
+func (client *client) doRequest(method string, reqURL string, headers map[string]string) (*Response, error) {
 	// Create request
 	req, err := http.NewRequest(method, reqURL, nil)
 	if err != nil {
