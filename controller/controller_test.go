@@ -45,12 +45,15 @@ func TestGatherAndSaveURL(t *testing.T) {
 	control := controller.NewController(client, repository)
 
 	expectedTime := time.Now().Unix()
-	expectedDocumentWithControlData := make(map[string]interface{})
 	myresponse := make(map[string]interface{})
-	expectedDocumentWithControlData["response"] = myresponse
 	myresponse["body"] = expectedBody
 	myresponse["status"] = response.StatusCode
+	myrequest := make(map[string]interface{})
+	myrequest["url"] = url
+	expectedDocumentWithControlData := make(map[string]interface{})
 	expectedDocumentWithControlData["time"] = expectedTime
+	expectedDocumentWithControlData["response"] = myresponse
+	expectedDocumentWithControlData["request"] = myrequest
 
 	patch := monkey.Patch(time.Now, func() time.Time { return time.Unix(expectedTime, 0) })
 	defer patch.Unpatch()

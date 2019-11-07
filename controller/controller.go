@@ -27,13 +27,16 @@ func NewController(cl gatherer.Client, repo db.GenericRepository) Controller {
 	}
 }
 
-func wrapResponse(original *gatherer.Response) map[string]interface{} {
+func wrapResponse(url string, original *gatherer.Response) map[string]interface{} {
 	wrappedResponse := make(map[string]interface{})
 	response := make(map[string]interface{})
+	request := make(map[string]interface{})
 	wrappedResponse["time"] = time.Now().Unix()
 	wrappedResponse["response"] = response
+	wrappedResponse["request"] = request
 	response["body"] = *original.Body
 	response["status"] = original.StatusCode
+	request["url"] = url
 
 	return wrappedResponse
 }
@@ -49,7 +52,7 @@ func (controller *controller) GatherAndSaveURL(url string) error {
 	log.Printf("Status: %d", response.StatusCode)
 
 	log.Printf("Saving response from %s\n", url)
-	id, err := controller.repository.Create(context.Background(), wrapResponse(response))
+	id, err := controller.repository.Create(context.Background(), wrapResponse(url, response))
 	if err != nil {
 		log.Printf("Error calling [%s]: %s\n", url, err.Error())
 		return err
