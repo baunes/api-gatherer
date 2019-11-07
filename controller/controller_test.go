@@ -50,6 +50,7 @@ func TestGatherAndSaveURL(t *testing.T) {
 	myresponse["status"] = response.StatusCode
 	myrequest := make(map[string]interface{})
 	myrequest["url"] = url
+	myrequest["milliseconds"] = int64(0)
 	expectedDocumentWithControlData := make(map[string]interface{})
 	expectedDocumentWithControlData["time"] = expectedTime
 	expectedDocumentWithControlData["response"] = myresponse

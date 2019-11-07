@@ -27,7 +27,7 @@ func NewController(cl gatherer.Client, repo db.GenericRepository) Controller {
 	}
 }
 
-func wrapResponse(url string, original *gatherer.Response) map[string]interface{} {
+func wrapResponse(url string, elapsed int64, original *gatherer.Response) map[string]interface{} {
 	wrappedResponse := make(map[string]interface{})
 	response := make(map[string]interface{})
 	request := make(map[string]interface{})
@@ -37,6 +37,7 @@ func wrapResponse(url string, original *gatherer.Response) map[string]interface{
 	response["body"] = *original.Body
 	response["status"] = original.StatusCode
 	request["url"] = url
+	request["milliseconds"] = elapsed
 
 	return wrappedResponse
 }
@@ -44,15 +45,18 @@ func wrapResponse(url string, original *gatherer.Response) map[string]interface{
 // GatherURL call an url and store the response
 func (controller *controller) GatherAndSaveURL(url string) error {
 	log.Printf("Calling %s\n", url)
+	start := time.Now()
 	response, err := controller.client.Get(url)
 	if err != nil {
 		log.Printf("Error calling [%s]: %s\n", url, err.Error())
 		return err
 	}
+	t := time.Now()
 	log.Printf("Status: %d", response.StatusCode)
+	elapsed := t.Sub(start)
 
 	log.Printf("Saving response from %s\n", url)
-	id, err := controller.repository.Create(context.Background(), wrapResponse(url, response))
+	id, err := controller.repository.Create(context.Background(), wrapResponse(url, elapsed.Microseconds(), response))
 	if err != nil {
 		log.Printf("Error calling [%s]: %s\n", url, err.Error())
 		return err
