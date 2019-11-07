@@ -3,34 +3,63 @@ package controller_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/baunes/api-gatherer/controller"
 	"github.com/baunes/api-gatherer/gatherer"
 	"github.com/baunes/api-gatherer/mocks"
+	"github.com/bouk/monkey"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGatherAndSaveURL(t *testing.T) {
-	client := &mocks.Client{}
-	repository := &mocks.GenericRepository{}
-	control := controller.NewController(client, repository)
-	url := "dummyurl"
-	expectedBody := make(map[string]interface{})
-	expectedBody["key"] = "value"
-	response := gatherer.Response{
+func createObject() *map[string]interface{} {
+	obj := make(map[string]interface{})
+	obj["key_string"] = "a string"
+	obj["key_int"] = 1
+	obj["key_bool"] = true
+
+	return &obj
+}
+
+func createResponse(body *map[string]interface{}) gatherer.Response {
+	return gatherer.Response{
 		StatusCode: 200,
-		Body:       &expectedBody,
+		Body:       body,
 	}
+}
+
+func TestGatherAndSaveURL(t *testing.T) {
+	url := "dummyurl"
+	expectedBody := *createObject()
+	response := createResponse(createObject())
+
 	expectedId := 1
+
+	client := &mocks.Client{}
 	client.On("Get", url).Return(&response, nil)
-	repository.On("Create", mock.Anything, &expectedBody).Return(expectedId, nil)
+
+	repository := &mocks.GenericRepository{}
+	repository.On("Create", mock.Anything, mock.Anything).Return(expectedId, nil)
+
+	control := controller.NewController(client, repository)
+
+	expectedTime := time.Now().Unix()
+	expectedDocumentWithControlData := make(map[string]interface{})
+	myresponse := make(map[string]interface{})
+	expectedDocumentWithControlData["response"] = myresponse
+	myresponse["body"] = expectedBody
+	myresponse["status"] = response.StatusCode
+	expectedDocumentWithControlData["time"] = expectedTime
+
+	patch := monkey.Patch(time.Now, func() time.Time { return time.Unix(expectedTime, 0) })
+	defer patch.Unpatch()
 
 	err := control.GatherAndSaveURL(url)
 
 	assert.NoError(t, err)
 	client.AssertCalled(t, "Get", url)
-	repository.AssertCalled(t, "Create", mock.Anything, &expectedBody)
+	repository.AssertCalled(t, "Create", mock.Anything, expectedDocumentWithControlData)
 }
 
 func TestGatherAndSaveURLWithHTTPError(t *testing.T) {
@@ -52,18 +81,13 @@ func TestGatherAndSaveURLWithErrorSavingData(t *testing.T) {
 	repository := &mocks.GenericRepository{}
 	control := controller.NewController(client, repository)
 	url := "dummyurl"
-	expectedBody := make(map[string]interface{})
-	expectedBody["key"] = "value"
-	response := gatherer.Response{
-		StatusCode: 200,
-		Body:       &expectedBody,
-	}
+	response := createResponse(createObject())
 	client.On("Get", url).Return(&response, nil)
-	repository.On("Create", mock.Anything, &expectedBody).Return(nil, fmt.Errorf("Error saving data"))
+	repository.On("Create", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("Error saving data"))
 
 	err := control.GatherAndSaveURL(url)
 
 	assert.Equal(t, "Error saving data", err.Error())
 	client.AssertCalled(t, "Get", url)
-	repository.AssertCalled(t, "Create", mock.Anything, &expectedBody)
+	repository.AssertCalled(t, "Create", mock.Anything, mock.Anything)
 }
