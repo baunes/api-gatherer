@@ -8,13 +8,13 @@ import (
 )
 
 func resetArguments() {
-	urlToGather = ""
-	hostMongo = ""
-	portMongo = ""
-	userMongo = ""
-	passMongo = ""
-	databseMongo = ""
-	collectionMongo = ""
+	httpConfig.url = ""
+	databaseConfig.host = ""
+	databaseConfig.port = ""
+	databaseConfig.user = ""
+	databaseConfig.pass = ""
+	databaseConfig.database = ""
+	databaseConfig.collection = ""
 }
 
 func TestUrlIsRequired(t *testing.T) {

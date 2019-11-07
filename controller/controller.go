@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/baunes/api-gatherer/db"
@@ -37,13 +36,13 @@ func (controller *controller) GatherAndSaveURL(url string) error {
 	}
 	log.Printf("Status: %d", response.StatusCode)
 
-	log.Printf("Calling %s\n", url)
+	log.Printf("Saving response from %s\n", url)
 	id, err := controller.repository.Create(context.Background(), response.Body)
 	if err != nil {
 		log.Printf("Error calling [%s]: %s\n", url, err.Error())
 		return err
 	}
-	fmt.Printf("Message stored: %v", id)
+	log.Printf("Message stored: %v", id)
 
 	return nil
 }

@@ -9,8 +9,8 @@ type Controller struct {
 	mock.Mock
 }
 
-// GatherURL provides a mock function with given fields: _a0
-func (_m *Controller) GatherURL(_a0 string) error {
+// GatherAndSaveURL provides a mock function with given fields: _a0
+func (_m *Controller) GatherAndSaveURL(_a0 string) error {
 	ret := _m.Called(_a0)
 
 	var r0 error

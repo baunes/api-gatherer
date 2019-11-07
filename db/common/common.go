@@ -6,6 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 // Config stores the configuration for the database
@@ -34,6 +35,7 @@ type ClientHelper interface {
 	Database(string) DatabaseHelper
 	Connect() error
 	StartSession() (mongo.Session, error)
+	Ping() error
 }
 
 type mongoClient struct {
@@ -87,6 +89,10 @@ func (mc *mongoClient) StartSession() (mongo.Session, error) {
 
 func (mc *mongoClient) Connect() error {
 	return mc.cl.Connect(context.Background())
+}
+
+func (mc *mongoClient) Ping() error {
+	return mc.cl.Ping(context.Background(), readpref.Primary())
 }
 
 func (md *mongoDatabase) Collection(colName string) CollectionHelper {
