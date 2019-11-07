@@ -7,6 +7,9 @@ services:
     image: mongo:4.2
     ports:
       - 27017:27017
+    volumes:
+       - mongo-data:/data/db
+       - mongo-conf:/data/configdb
     # environment:
     #   MONGO_INITDB_ROOT_USERNAME: root
     #   MONGO_INITDB_ROOT_PASSWORD: example
@@ -20,3 +23,7 @@ services:
     # environment:
     #   ME_CONFIG_MONGODB_ADMINUSERNAME: root
     #   ME_CONFIG_MONGODB_ADMINPASSWORD: example
+
+volumes:
+  mongo-data:
+  mongo-conf:
