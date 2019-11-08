@@ -56,22 +56,6 @@ func TestQueryWithEmptyUrl(t *testing.T) {
 	}
 }
 
-func TestGetOnlyAcceptsJSON(t *testing.T) {
-	baseURL := setup()
-	defer teardown()
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "text/plain")
-
-	})
-
-	_, err := client.Get(baseURL.String())
-	if err == nil || !strings.Contains(err.Error(), "should be 'application/json'") {
-		t.Errorf(`Client.Query(...) must fail: %s`, err)
-	}
-
-}
-
 func TestGetJSON(t *testing.T) {
 	baseURL := setup()
 	defer teardown()

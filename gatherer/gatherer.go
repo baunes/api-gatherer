@@ -2,9 +2,7 @@ package gatherer
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"mime"
 	"net/http"
 )
 
@@ -69,12 +67,6 @@ func (client *client) doRequest(method string, reqURL string, headers map[string
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
-	}
-
-	// Check mime type of response
-	mimeType, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-	if err != nil || mimeType != "application/json" {
-		return nil, fmt.Errorf("heder Content-Type is '%s', but should be 'application/json'", mimeType)
 	}
 
 	// Parse request
