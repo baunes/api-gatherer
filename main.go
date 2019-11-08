@@ -97,21 +97,28 @@ func schedule(c *cron.Cron, spec string, cmd func()) error {
 	return nil
 }
 
+func initializeController(cfgHTTP configHTTP, cfgDatabase configDatabase) (controller.Controller, error) {
+	log.Printf("Creating Http Client")
+	client := gatherer.NewClient()
+	log.Printf("Creating Database")
+	mongoDB, err := newDatabaseClient(cfgDatabase)
+	if err != nil {
+		log.Printf("Error: %s", err)
+		return nil, err
+	}
+	log.Printf("Creating Repository")
+	repository := db.NewGenericRepository(mongoDB.Database(cfgDatabase.database), cfgDatabase.collection)
+	log.Printf("Creating Controller")
+	ctrl := controller.NewController(client, repository)
+	return ctrl, err
+}
+
 func do(c *cron.Cron, cfgHTTP configHTTP, cfgDatabase configDatabase) error {
+	ctrl, err := initializeController(cfgHTTP, cfgDatabase)
+	if err != nil {
+		log.Fatalf("Error initializing controller: %s", err.Error())
+	}
 	cmd := func() {
-		log.Printf("Creating Http Client")
-		client := gatherer.NewClient()
-		log.Printf("Creating Database")
-		mongoDB, err := newDatabaseClient(cfgDatabase)
-		if err != nil {
-			log.Printf("Error: %s", err)
-			return
-		}
-		log.Printf("Creating Repository")
-		repository := db.NewGenericRepository(mongoDB.Database(cfgDatabase.database), cfgDatabase.collection)
-		log.Printf("Creating Controller")
-		ctrl := controller.NewController(client, repository)
-		log.Printf("Running controller")
 		ctrl.GatherAndSaveURL(cfgHTTP.url)
 	}
 	return schedule(c, cfgHTTP.cron, cmd)
