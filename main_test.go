@@ -25,7 +25,7 @@ func TestUrlIsRequired(t *testing.T) {
 		assert.NotNil(t, r)
 		if r != nil {
 			assert.NotNil(t, r)
-			assert.Contains(t, r, "-url is required")
+			assert.Contains(t, r, "-request.url is required")
 		}
 	}()
 	os.Args = []string{"cmd"}
@@ -45,7 +45,7 @@ func TestDBDatabaseIsRequired(t *testing.T) {
 			assert.Contains(t, r, "-db.databse is required")
 		}
 	}()
-	os.Args = []string{"cmd", "-url=http://host:port/path?a=1&b=2"}
+	os.Args = []string{"cmd", "-request.url=http://host:port/path?a=1&b=2"}
 	resetArguments()
 
 	checkArguments()
@@ -62,7 +62,7 @@ func TestDBCollectionIsRequired(t *testing.T) {
 			assert.Contains(t, r, "-db.collection is required")
 		}
 	}()
-	os.Args = []string{"cmd", "-url=http://host:port/path?a=1&b=2", "-db.database=foo"}
+	os.Args = []string{"cmd", "-request.url=http://host:port/path?a=1&b=2", "-db.database=foo"}
 	resetArguments()
 
 	checkArguments()

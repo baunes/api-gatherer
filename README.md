@@ -14,4 +14,4 @@ Don't use for production.
 
 Example:
 
-    go run main.go -url https://quote-garden.herokuapp.com/quotes/random -db.database quotes -db.collection random
+    go run main.go -request.url https://quote-garden.herokuapp.com/quotes/random -db.database quotes -db.collection random

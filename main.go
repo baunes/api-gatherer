@@ -7,15 +7,18 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/baunes/api-gatherer/controller"
 	"github.com/baunes/api-gatherer/db"
 	"github.com/baunes/api-gatherer/db/common"
 	"github.com/baunes/api-gatherer/gatherer"
+	"github.com/robfig/cron/v3"
 )
 
 type configHTTP struct {
-	url string
+	url  string
+	cron string
 }
 
 type configDatabase struct {
@@ -31,7 +34,8 @@ var httpConfig configHTTP
 var databaseConfig configDatabase
 
 func init() {
-	flag.StringVar(&httpConfig.url, "url", "", "* The url to gather. Required")
+	flag.StringVar(&httpConfig.url, "request.url", "", "* The url to gather. Required")
+	flag.StringVar(&httpConfig.cron, "request.cron", "0/10 * * ? * *", "The cron expression. Uses Quartz format http://www.quartz-scheduler.org/documentation/quartz-2.0.2/tutorials/tutorial-lesson-06.html")
 	flag.StringVar(&databaseConfig.host, "db.host", "localhost", "The host of the Mongodb database")
 	flag.StringVar(&databaseConfig.port, "db.port", "27017", "The port of the Mongodb database")
 	flag.StringVar(&databaseConfig.user, "db.username", " ", "The username of the Mongodb database")
@@ -40,12 +44,25 @@ func init() {
 	flag.StringVar(&databaseConfig.collection, "db.collection", "", "* The collection to store the requests. Required")
 }
 
+type myLogger struct {
+}
+
+func (logger myLogger) Info(msg string, keysAndValues ...interface{}) {
+	log.Printf(msg, keysAndValues...)
+}
+func (logger myLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+	log.Fatalf(msg, keysAndValues...)
+}
+
 func main() {
 	defer exitIfPanic()
 	checkArguments()
-	err := do(httpConfig, databaseConfig)
+	err := do(newCron(), httpConfig, databaseConfig)
 	if err != nil {
 		log.Printf("Error: %s", err)
+	}
+	for {
+		time.Sleep(time.Minute)
 	}
 }
 
@@ -53,7 +70,7 @@ func checkArguments() {
 	flag.Parse()
 	databaseConfig.user = strings.TrimSpace(databaseConfig.user)
 	databaseConfig.pass = strings.TrimSpace(databaseConfig.pass)
-	check(len(httpConfig.url) > 0, "parameter -url is required")
+	check(len(httpConfig.url) > 0, "parameter -request.url is required")
 	check(len(databaseConfig.database) > 0, "parameter -db.databse is required")
 	check(len(databaseConfig.collection) > 0, "parameter -db.collection is required")
 }
@@ -71,21 +88,33 @@ func check(result bool, message string) {
 	}
 }
 
-func do(cfgHTTP configHTTP, cfgDatabase configDatabase) error {
-	log.Printf("Creating Http Client")
-	client := gatherer.NewClient()
-	log.Printf("Creating Database")
-	mongoDB, err := newDatabaseClient(cfgDatabase)
+func schedule(c *cron.Cron, spec string, cmd func()) error {
+	_, err := c.AddFunc(spec, cmd)
 	if err != nil {
 		return err
 	}
-	log.Printf("Creating Repository")
-	repository := db.NewGenericRepository(mongoDB.Database(cfgDatabase.database), cfgDatabase.collection)
-	log.Printf("Creating Controller")
-	ctrl := controller.NewController(client, repository)
-	log.Printf("Running controller")
-	ctrl.GatherAndSaveURL(cfgHTTP.url)
+	c.Start()
 	return nil
+}
+
+func do(c *cron.Cron, cfgHTTP configHTTP, cfgDatabase configDatabase) error {
+	cmd := func() {
+		log.Printf("Creating Http Client")
+		client := gatherer.NewClient()
+		log.Printf("Creating Database")
+		mongoDB, err := newDatabaseClient(cfgDatabase)
+		if err != nil {
+			log.Printf("Error: %s", err)
+			return
+		}
+		log.Printf("Creating Repository")
+		repository := db.NewGenericRepository(mongoDB.Database(cfgDatabase.database), cfgDatabase.collection)
+		log.Printf("Creating Controller")
+		ctrl := controller.NewController(client, repository)
+		log.Printf("Running controller")
+		ctrl.GatherAndSaveURL(cfgHTTP.url)
+	}
+	return schedule(c, cfgHTTP.cron, cmd)
 }
 
 func newDatabaseClient(cfgDatabase configDatabase) (common.ClientHelper, error) {
@@ -114,4 +143,8 @@ func newDatabaseClient(cfgDatabase configDatabase) (common.ClientHelper, error) 
 	log.Print("Connected to Database")
 
 	return client, nil
+}
+
+func newCron() *cron.Cron {
+	return cron.New(cron.WithSeconds(), cron.WithLogger(myLogger{}))
 }
